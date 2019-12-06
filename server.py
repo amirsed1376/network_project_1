@@ -116,30 +116,72 @@ while (True):
         # draw(ground , dimension)
         break
 
-number_player = 2
+number_player = 3
 for i in range(0,number_player):
     """connect 4 client to server"""
     s.listen()
-    conn, addr = s.accept()
-    conn_list.append((conn, addr))
-    conn.sendall((str(i+1)+"\r\n").encode())#nobat
-    # conn.sendall(str(dimension_x).encode())
-    print(conn_list[i])
-    gamer = player()
-    gamer.nobat = i+1
-    player_list.append(gamer)
+    try:
+        conn, addr = s.accept()
+        conn_list.append((conn, addr))
+        conn.sendall((str(i+1)+"\r\n").encode())#nobat
+        # conn.sendall(str(dimension_x).encode())
+        print(conn_list[i])
+        gamer = player()
+        gamer.nobat = i+1
+        player_list.append(gamer)
+
+    except:
+        print(">>>>>>>>>")
+        if conn_list.__len__() == i:#if conn not append conn_list
+            conn, addr = s.accept()
+            conn_list.append((conn, addr))
+            conn.sendall((str(i + 1) + "\r\n").encode())  # nobat
+            # conn.sendall(str(dimension_x).encode())
+            print(conn_list[i])
+            gamer = player()
+            gamer.nobat = i + 1
+            player_list.append(gamer)
+        elif conn_list.__len__() > i :
+            conn, addr=conn_list[i]
+            while True:
+                try:
+                    conn.sendall((str(i + 1) + "\r\n").encode())  # nobat
+                    # conn.sendall(str(dimension_x).encode())
+                    print(conn_list[i])
+                    gamer = player()
+                    gamer.nobat = i + 1
+                    player_list.append(gamer)
+                    break
+                except:
+                    continue
+
+index=0
+while(index < conn_list.__len__()):
+    item=conn_list[index]
+    try:
+        sleep(0.5)
+        print("_______________")
+        """give name of client and specify color"""
+        conn = item [0]
+        addr =item [1]
+        try:
+            conn.sendall("your name ?\r\n".encode())
+        except:
+            raise  Exception(item , "send")
+        try:
+            name=conn.recv(1024)
+        except:
+            raise Exception(item , "recv")
+        print(name.decode())
+        player_list[index].name=name.decode().strip()
+        index+=1
+    except Exception as e :
+        if e.args[1]=="send":
+            continue
 
 
-for index , item in enumerate(conn_list):
-    sleep(0.5)
-    print("_______________")
-    """give name of client and specify color"""
-    conn = item [0]
-    addr =item [1]
-    conn.sendall("your name ?\r\n".encode())
-    name=conn.recv(1024)
-    print(name.decode())
-    player_list[index].name=name.decode().strip()
+
+
 
 string_names = "names:"
 for player in player_list:
@@ -195,10 +237,13 @@ while True:
     for player in player_list:
         print(player)
     print("x: ",x , "   y: ",y)
+    print("conn_list",conn_list)
     for con in conn_list:
         """send to all clients what the current turn player send """
-        con[0].sendall((str(index) + ":" + data.decode()+":"+str(player_list[index].points)+"\r\n").encode())
+        con[0].sendall((str(index) + ":" + data.decode().strip()+":"+str(player_list[index].points)+"\r\n").encode())
 
     if not gift(point):
         index += 1
+
+
 
