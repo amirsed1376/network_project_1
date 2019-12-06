@@ -141,9 +141,18 @@ for index , item in enumerate(conn_list):
     print(name.decode())
     player_list[index].name=name.decode().strip()
 
+string_names = "names:"
 for player in player_list:
     """print player"""
+    string_names += player.name + ","
     print(player)
+
+string_names += "\r\n"
+
+for item in conn_list:
+    conn=item[0]
+    conn.sendall(string_names.encode() )
+
 
 index = 0
 while True:
@@ -181,13 +190,14 @@ while True:
     print("___squers____:",squers)
     point = points(squers, [x,y], ground)
     player_list[index].points += point
+
     # draw(ground, dimension_x)
     for player in player_list:
         print(player)
     print("x: ",x , "   y: ",y)
     for con in conn_list:
         """send to all clients what the current turn player send """
-        con[0].sendall((str(index) + ":" + data.decode()+"\r\n").encode())
+        con[0].sendall((str(index) + ":" + data.decode()+":"+str(player_list[index].points)+"\r\n").encode())
 
     if not gift(point):
         index += 1
