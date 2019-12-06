@@ -30,32 +30,6 @@ def points(squers , edge , ground):
     return point
 
 
-
-# def draw(ground , dimeshion):
-#     ground2=[]
-#     pos=[]
-#     for x in range(len(ground)):
-#         ground2.append([])
-#         for y in range(len(ground)):
-#             if ground[x][y]==0:
-#                 ground2[x].append(0)
-#             elif ground[x][y]==2:
-#                 ground2[x].append(0)
-#             elif ground[x][y]==1:
-#                 ground2[x].append(1)
-#
-#     for x in range(dimension_x - 1 , -1 , -1):
-#         for y in range(dimension_x):
-#             pos.append([y,x])
-#     print(ground2)
-#     print("pos" )
-#     print(pos)
-#     A = np.array(ground2)
-#     G = nx.DiGraph(A)
-#
-#     nx.draw(G, pos)
-#     plt.show()
-
 def end_game(ground):
     """if all edge is selected"""
     for x in ground:
@@ -142,7 +116,8 @@ while (True):
         # draw(ground , dimension)
         break
 
-for i in range(0,2):
+number_player = 2
+for i in range(0,number_player):
     """connect 4 client to server"""
     s.listen()
     conn, addr = s.accept()
@@ -170,78 +145,50 @@ for player in player_list:
     """print player"""
     print(player)
 
-
+index = 0
 while True:
     """start game """
-    for index, item in enumerate(conn_list):
-        try:
+    index = index % number_player
+    item = conn_list[index]
+    if end_game(ground):
+        """when game ended send massage to specify winner"""
+        win_player = max(player_list, key=lambda player: player.points)
+        for item in conn_list:
+            print("end_game : ",win_player)
 
-            if end_game(ground):
-                """when game ended send massage to specify winner"""
-                win_player = max(player_list, key=lambda player: player.points)
-                for item in conn_list:
+            item[0].sendall(("end Game _ the winner : " + str(win_player)+"\r\n").encode())
+        break
+    conn=item[0]
+    addr=item[1]
 
-                    item[0].sendall(("end Game / the winer : " + str(win_player)+"\r\n").encode())
-                break
-            conn=item[0]
-            addr=item[1]
+    for index2,con in enumerate(conn_list):
 
-            while True:
-                for index2,con in enumerate(conn_list):
+        """send to all player Who's the turn """
+        if index == index2:
+            con[0].sendall("your turn\r\n".encode())
+        else:
+            print((str(player_list[index].name).encode()))
+            con[0].sendall((str(player_list[index].name)+" turn \r\n").encode())
 
-                    """send to all player Who's the turn """
-                    if index == index2:
-                        con[0].sendall("your turn\r\n".encode())
-                    else:
-                        print((str(player_list[index].name).encode()))
-                        con[0].sendall((str(player_list[index].name)+" turn \r\n").encode())
+    data = conn.recv(1024) #give edge  forexample 1,2
+    print("edge = " , data.decode())
+    edge = data.decode().split(",")
+    x=int(edge[0])
+    y=int(edge[1])
 
-                data = conn.recv(1024) #give edge  forexample 1,2
-                print("edge = " , data.decode())
-                edge = data.decode().split(",")
-                x=int(edge[0])
-                y=int(edge[1])
+    ground[x][y]=1
+    ground[y][x]=1
+    print("___squers____:",squers)
+    point = points(squers, [x,y], ground)
+    player_list[index].points += point
+    # draw(ground, dimension_x)
+    for player in player_list:
+        print(player)
+    print("x: ",x , "   y: ",y)
+    for con in conn_list:
+        """send to all clients what the current turn player send """
+        con[0].sendall((str(index) + ":" + data.decode()+"\r\n").encode())
 
-                ground[x][y]=1
-                ground[y][x]=1
-                print("___squers____:",squers)
-                point = points(squers, [x,y], ground)
-                player_list[index].points += point
-                # draw(ground, dimension_x)
-                for player in player_list:
-                    print(player)
-                print("x: ",x , "   y: ",y)
-                for con in conn_list:
-                    """send to all clients what the current turn player send """
-                    con[0].sendall((str(index) + ":" + data.decode()+"\r\n").encode())
+    if not gift(point):
+        index += 1
 
-                if not gift(point):
-                    break
-
-        except socket.error:
-
-            for i in conn_list:
-                try:
-                    i[0].sendall("it is an error\r\n")
-                except:
-                    addr=i[1]
-                    i[0].close()
-                    s.listen()
-                    conn, addr = s.accept()
-                    if addr[0] != i[1][0]:
-                        conn.close()
-                    else:
-                        pass
-
-                    conn_list.append((conn, addr))
-                    conn.sendall((str(i + 1)+"\r\n").encode())
-                    conn.sendall((str(dimension_x)+"\r\n").encode())
-                    print(conn_list[i])
-                    gamer = player()
-                    gamer.nobat = i + 1
-                    player_list.append(gamer)
-
-            break
-
-
-a
